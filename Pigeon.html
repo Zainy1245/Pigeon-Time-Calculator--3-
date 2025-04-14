@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pigeon Time Competition</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="heading">
+        <img src="WhatsApp Image 2024-11-30 at 21.27.19_6dde1840.jpg" alt="Logo" class="logo" >
+        <h1 id="title">Global Pigeon Sports Tournament Besakh 2025 Gujar Khan</h1>
+        <!-- Language Selector Dropdown -->
+    </div>
+    <div class="container">
+ 
+        <h3 id="start-time">Start time: 6:00 AM</h3>
+        <h3 id="end-time">End time: 8:00 PM</h3>
+    
+        <label for="date-selector" id="select-date-label">Select Date:</label>
+        <select id="date-selector" onchange="onDateChange()">
+            <option value="2025-04-02">April 2</option>
+            <option value="2025-04-04">April 4</option>
+            <option value="2025-04-06"> April 6</option>
+        </select>
+    
+        <div class="input-section">
+            <h4 id="input-heading">Enter Player and Pigeon Information</h4>
+            <div class="input-group">
+                <label for="player-name" id="player-name-label">Player Name:</label>
+                <input type="text" id="player-name" placeholder="Enter player name">
+            </div>
+            <div class="input-group">
+                <label for="pigeon-name" id="pigeon-name-label">Pigeon Name:</label>
+                <input type="text" id="pigeon-name" placeholder="Enter pigeon name">
+            </div>
+            
+            
+            <div class="input-group">
+                <label for="landing-time" id="landing-time-label">Landing Time (HH:mm):</label>
+                <input type="time" id="landing-time" value="06:00">
+            </div>
+            <button onclick="addPigeonTime()" id="add-pigeon-button">Add Pigeon</button>
+        </div>
+    
+        
+        <div id="pigeon-grid-wrapper" style="overflow-x: auto; width: 100%;">
+            <div id="pigeon-grid"></div>
+          </div>
+    
+        <div class="result-section">
+            <button onclick="calculateWinner()" id="calculate-winner-button">Calculate Winner</button>
+            <div id="reward-info"></div>
+            <div id="pigeon-grid"></div>
+            
+            
+            
+        </div>
+    
+       
+    
+        <!-- Add a button to download the results as PDF -->
+        <button onclick="downloadPDF()" id="download-pdf-button">Download Results as PDF</button>
+    
+        <div id="final-winner-info" style="display:none;">
+            <h3 id="final-results-heading">Daily Result</h3>
+    
+            <!-- Table for Daily Winners -->
+            <table id="daily-winners-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Winner</th>
+                        <th>Winner Pigeon</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+    
+            <h4 id="total-times-heading">Final Result:</h4>
+            <table id="total-times-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Total Time</th>
+                        <th>Winner</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    
+        <!-- Button to Trigger Final Calculation -->
+        <button onclick="calculateFinalWinner()" id="final-winner-button">Calculate Final Winner</button>
+        <button onclick="downloadFinalResultPDF()" id="download-final-pdf-button">Download Final Results PDF</button>
+         <!-- Add a button to clear all records -->
+         <button class="clear-all-btn" onclick="clearAllRecords()" id="clear-all-button">Clear All Records</button>
+        <label for="language-selector">Select Language:</label>
+        <select id="language-selector" onchange="changeLanguage()">
+            <option value="en">English</option>
+            <option value="ur">Urdu</option>
+        </select>
+    </div>
+    <script src="script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Include jsPDF library -->
+     <!-- jsPDF core -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- jsPDF AutoTable plugin -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+   
+</body>
+</html>
