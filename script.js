@@ -587,7 +587,7 @@ function calculateFinalWinner() {
     const allPlayersTotalTimes = {};
     const dailyWinnersTable = document.getElementById('daily-winners-table').getElementsByTagName('tbody')[0];
     const totalTimesTable = document.getElementById('total-times-table').getElementsByTagName('tbody')[0];
-    
+
     dailyWinnersTable.innerHTML = '';
     totalTimesTable.innerHTML = '';
 
@@ -595,58 +595,81 @@ function calculateFinalWinner() {
         const pigeonData = pigeonDataByDate[date] || [];
         const playerTotalTimes = playerTotalTimesByDate[date] || {};
 
-        // Filter pigeons that landed before 8:00 PM
-        const pigeonsBefore8pm = pigeonData.filter(p => {
-            const landing = new Date(p.landingDate);
-            const cutoff = new Date(`${date}T20:00:00`);
-            return landing <= cutoff;
+        if (pigeonData.length === 0) return;
+
+        // Pehla Bahadur (earliest pigeon overall)
+        let pehla = pigeonData.reduce((earliest, current) => {
+            return new Date(current.landingDate) < new Date(earliest.landingDate) ? current : earliest;
         });
 
-        if (pigeonsBefore8pm.length === 0) return;
+        // Akhri Bahadur (latest before 8PM)
+        const pigeonsBefore8pm = pigeonData.filter(p => new Date(p.landingDate) <= new Date(`${date}T20:00:00`));
+        let akhri = pigeonsBefore8pm.length > 0
+            ? pigeonsBefore8pm.reduce((latest, current) => new Date(current.landingDate) > new Date(latest.landingDate) ? current : latest)
+            : null;
 
-        // Find the pigeon that landed the latest (just before 8 PM)
-        let lastPigeon = pigeonsBefore8pm.reduce((latest, current) => {
-            return new Date(current.landingDate) > new Date(latest.landingDate) ? current : latest;
-        });
+        // Winner of the day (player with most total minutes)
+        let winnerOfDay = Object.entries(playerTotalTimes).reduce((max, current) => {
+            return current[1] > max[1] ? current : max;
+        }, ["", 0]);
 
-        // Add row to daily winner table
+        // Add to Daily Winners Table
         const row = dailyWinnersTable.insertRow();
         row.insertCell(0).textContent = date;
-        row.insertCell(1).textContent = lastPigeon.playerName;
-        row.insertCell(2).textContent = lastPigeon.pigeonName;
-        row.insertCell(3).textContent = lastPigeon.landingTime;
+        row.insertCell(1).innerHTML = `"${pehla.pigeonName}"<br>(${formatAMPM(pehla.landingDate)})`;
+        row.insertCell(2).innerHTML = akhri
+            ? `"${akhri.pigeonName}"<br>(${formatAMPM(akhri.landingDate)})`
+            : "No pigeon before 8PM";
+        row.insertCell(3).textContent = winnerOfDay[0];
+        row.insertCell(4).textContent = formatDuration(winnerOfDay[1]);
 
-        // Accumulate total player time across all dates
+        // Add to total time across all days
         for (let player in playerTotalTimes) {
             allPlayersTotalTimes[player] = (allPlayersTotalTimes[player] || 0) + playerTotalTimes[player];
         }
     });
 
-    // Identify player with the most total time
-    let finalWinner = Object.keys(allPlayersTotalTimes).reduce((maxPlayer, currentPlayer) => {
-        return allPlayersTotalTimes[currentPlayer] > allPlayersTotalTimes[maxPlayer] ? currentPlayer : maxPlayer;
-    });
+    // Sort by total time for final results
+    const sortedPlayers = Object.entries(allPlayersTotalTimes).sort((a, b) => b[1] - a[1]);
 
-    // Build the total time table
-    for (let player in allPlayersTotalTimes) {
-        let row = totalTimesTable.insertRow();
-        let totalMinutes = allPlayersTotalTimes[player];
-        let hours = Math.floor(totalMinutes / 60);
-        let minutes = Math.round(totalMinutes % 60);
+    sortedPlayers.forEach(([player, minutes], index) => {
+        const row = totalTimesTable.insertRow();
         row.insertCell(0).textContent = player;
-        row.insertCell(1).textContent = `${hours}h ${minutes}m`;
-        let winnerCell = row.insertCell(2);
-        if (player === finalWinner) {
-            winnerCell.textContent = "Winner!";
-            winnerCell.style.color = "red";
-            winnerCell.style.fontWeight = "bold";
-        } else {
-            winnerCell.textContent = "";
+        row.insertCell(1).textContent = formatDuration(minutes);
+
+        let rank = '';
+        switch (index) {
+            case 0: rank = 'Winner 🏆'; break;
+            case 1: rank = '2nd Place 🥈'; break;
+            case 2: rank = '3rd Place 🥉'; break;
+            case 3: rank = '4th Place'; break;
+            case 4: rank = '5th Place'; break;
+            default: rank = '6th';
         }
-    }
+        row.insertCell(2).textContent = rank;
+    });
 
     document.getElementById('final-winner-info').style.display = 'block';
 }
+
+// Format AM/PM Time
+function formatAMPM(dateStr) {
+    const date = new Date(dateStr);
+    let hours = date.getHours();
+    let minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12; // Convert 0 to 12
+    minutes = minutes < 10 ? '0' + minutes : minutes;
+    return `${hours}:${minutes} ${ampm}`;
+}
+
+// Format duration in H M
+function formatDuration(totalMinutes) {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = Math.round(totalMinutes % 60);
+    return `${hours}h ${minutes}m`;
+}
+
 
 function downloadFinalResultPDF() {
     const { jsPDF } = window.jspdf;
@@ -694,33 +717,42 @@ function downloadFinalResultPDF() {
    
 
     // Add Table for Total Times
-    const totalTimesTable = document.getElementById('total-times-table').getElementsByTagName('tbody')[0];
-    if (totalTimesTable.rows.length > 0) {
-        doc.setDrawColor(0);
-        doc.setFillColor(240, 240, 240); // Light gray fill
-        doc.rect(10, yPosition, 180, 10, 'FD'); // Header row
-        doc.text("Player", 12, yPosition + 7);
-        doc.text("Total Time", 70, yPosition + 7);
-        doc.text("Winner", 130, yPosition + 7);
-        yPosition += 12;
+const totalTimesTable = document.getElementById('total-times-table').getElementsByTagName('tbody')[0];
+if (totalTimesTable.rows.length > 0) {
+    doc.setDrawColor(0);
+    doc.setFillColor(240, 240, 240); // Light gray fill
+    doc.rect(10, yPosition, 180, 10, 'FD'); // Header row
+    doc.text("Player", 12, yPosition + 7);
+    doc.text("Total Time", 70, yPosition + 7);
+    doc.text("Winner", 130, yPosition + 7);
+    yPosition += 12;
 
-        Array.from(totalTimesTable.rows).forEach((row, index) => {
-            doc.setDrawColor(180); // Row border color
-            doc.setFillColor(255, 255, 255); // White fill for rows
-            doc.rect(10, yPosition, 180, 10, 'FD');
-            doc.text(row.cells[0].textContent, 12, yPosition + 7); // Player
-            doc.text(row.cells[1].textContent, 70, yPosition + 7); // Total Time
-            doc.text(row.cells[2].textContent, 130, yPosition + 7); // Winner (highlighted)
-            yPosition += 12;
-        });
-    } else {
-        doc.text("No total times data available.", 10, yPosition);
-        yPosition += 10;
-    }
+    Array.from(totalTimesTable.rows).forEach((row, index) => {
+        doc.setDrawColor(180); // Row border color
+        doc.setFillColor(255, 255, 255); // White fill for rows
+        doc.rect(10, yPosition, 180, 10, 'FD');
+        
+        // Adding some space between columns for better readability
+        const playerTextX = 12; // X-position for Player
+        const totalTimeTextX = 70; // X-position for Total Time
+        const winnerTextX = 130; // X-position for Winner
+
+        doc.text(row.cells[0].textContent, playerTextX, yPosition + 7); // Player
+        doc.text(row.cells[1].textContent, totalTimeTextX, yPosition + 7); // Total Time
+        doc.text(row.cells[2].textContent, winnerTextX, yPosition + 7); // Winner (highlighted)
+
+        yPosition += 12;
+    });
+} else {
+    doc.text("No total times data available.", 10, yPosition);
+    yPosition += 10;
+}
+
 
     // Save the PDF
     doc.save("Pigeon_Competition_Final_Results.pdf");
-}function changeLanguage() {
+}
+ function changeLanguage() {
     let language = document.getElementById('language-selector').value;
 
     // Translate text to Urdu or English based on selection
